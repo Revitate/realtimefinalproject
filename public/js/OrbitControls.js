@@ -13,7 +13,7 @@
 //    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 
-var OrbitControls = function(object, domElement) {
+THREE.OrbitControls = function(object, domElement) {
     this.object = object
 
     this.domElement = domElement !== undefined ? domElement : document
@@ -22,7 +22,7 @@ var OrbitControls = function(object, domElement) {
     this.enabled = true
 
     // "target" sets the location of focus, where the object orbits around
-    this.target = new Vector3()
+    this.target = new THREE.Vector3()
 
     // How far you can dolly in and out ( PerspectiveCamera only )
     this.minDistance = 0
@@ -75,9 +75,9 @@ var OrbitControls = function(object, domElement) {
 
     // Mouse buttons
     this.mouseButtons = {
-        LEFT: MOUSE.LEFT,
-        MIDDLE: MOUSE.MIDDLE,
-        RIGHT: MOUSE.RIGHT
+        LEFT: THREE.MOUSE.LEFT,
+        MIDDLE: THREE.MOUSE.MIDDLE,
+        RIGHT: THREE.MOUSE.RIGHT
     }
 
     // for reset
@@ -118,17 +118,17 @@ var OrbitControls = function(object, domElement) {
 
     // this method is exposed, but perhaps it would be better if we can make it private...
     this.update = (function() {
-        var offset = new Vector3()
+        var offset = new THREE.Vector3()
 
         // so camera.up is the orbit axis
-        var quat = new Quaternion().setFromUnitVectors(
+        var quat = new THREE.Quaternion().setFromUnitVectors(
             object.up,
-            new Vector3(0, 1, 0)
+            new THREE.Vector3(0, 1, 0)
         )
         var quatInverse = quat.clone().inverse()
 
-        var lastPosition = new Vector3()
-        var lastQuaternion = new Quaternion()
+        var lastPosition = new THREE.Vector3()
+        var lastQuaternion = new THREE.Quaternion()
 
         return function update() {
             var position = scope.object.position
@@ -262,24 +262,24 @@ var OrbitControls = function(object, domElement) {
     var EPS = 0.000001
 
     // current position in spherical coordinates
-    var spherical = new Spherical()
-    var sphericalDelta = new Spherical()
+    var spherical = new THREE.Spherical()
+    var sphericalDelta = new THREE.Spherical()
 
     var scale = 1
-    var panOffset = new Vector3()
+    var panOffset = new THREE.Vector3()
     var zoomChanged = false
 
-    var rotateStart = new Vector2()
-    var rotateEnd = new Vector2()
-    var rotateDelta = new Vector2()
+    var rotateStart = new THREE.Vector2()
+    var rotateEnd = new THREE.Vector2()
+    var rotateDelta = new THREE.Vector2()
 
-    var panStart = new Vector2()
-    var panEnd = new Vector2()
-    var panDelta = new Vector2()
+    var panStart = new THREE.Vector2()
+    var panEnd = new THREE.Vector2()
+    var panDelta = new THREE.Vector2()
 
-    var dollyStart = new Vector2()
-    var dollyEnd = new Vector2()
-    var dollyDelta = new Vector2()
+    var dollyStart = new THREE.Vector2()
+    var dollyEnd = new THREE.Vector2()
+    var dollyDelta = new THREE.Vector2()
 
     function getAutoRotationAngle() {
         return ((2 * Math.PI) / 60 / 60) * scope.autoRotateSpeed
@@ -298,7 +298,7 @@ var OrbitControls = function(object, domElement) {
     }
 
     var panLeft = (function() {
-        var v = new Vector3()
+        var v = new THREE.Vector3()
 
         return function panLeft(distance, objectMatrix) {
             v.setFromMatrixColumn(objectMatrix, 0) // get X column of objectMatrix
@@ -309,7 +309,7 @@ var OrbitControls = function(object, domElement) {
     })()
 
     var panUp = (function() {
-        var v = new Vector3()
+        var v = new THREE.Vector3()
 
         return function panUp(distance, objectMatrix) {
             if (scope.screenSpacePanning === true) {
@@ -327,7 +327,7 @@ var OrbitControls = function(object, domElement) {
 
     // deltaX and deltaY are in pixels; right and down are positive
     var pan = (function() {
-        var offset = new Vector3()
+        var offset = new THREE.Vector3()
 
         return function pan(deltaX, deltaY) {
             var element =
@@ -744,7 +744,7 @@ var OrbitControls = function(object, domElement) {
         )
             return
 
-        event.preventDefault()
+        // event.preventDefault()
         event.stopPropagation()
 
         scope.dispatchEvent(startEvent)
@@ -802,7 +802,7 @@ var OrbitControls = function(object, domElement) {
     function onTouchMove(event) {
         if (scope.enabled === false) return
 
-        event.preventDefault()
+        // event.preventDefault()
         event.stopPropagation()
 
         switch (event.touches.length) {
@@ -862,10 +862,10 @@ var OrbitControls = function(object, domElement) {
     this.update()
 }
 
-OrbitControls.prototype = Object.create(EventDispatcher.prototype)
-OrbitControls.prototype.constructor = OrbitControls
+THREE.OrbitControls.prototype = Object.create(THREE.EventDispatcher.prototype)
+THREE.OrbitControls.prototype.constructor = THREE.OrbitControls
 
-Object.defineProperties(OrbitControls.prototype, {
+Object.defineProperties(THREE.OrbitControls.prototype, {
     center: {
         get: function() {
             console.warn(
@@ -973,4 +973,3 @@ Object.defineProperties(OrbitControls.prototype, {
         }
     }
 })
-
