@@ -8,3 +8,11 @@ canvas {
     width: 100vw;
     height: 100vh;
 }
+
+.panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    overflow: hidden;
+}

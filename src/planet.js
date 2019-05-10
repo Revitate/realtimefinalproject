@@ -3,36 +3,70 @@ const { THREE } = window
 // 1 x,y,z = 10^9 m
 // 1 m = 10^24
 class Planet {
-    constructor(x, y, z, m, c) {
-        x = x || 0
-        y = y || 0
-        z = z || 0
-        this.pos = new THREE.Vector3(x, y, z)
+    constructor(index, geometry) {
+        this.index = index
+        this.geometry = geometry
         this.vel = new THREE.Vector3()
         this.acc = new THREE.Vector3()
-        this.mass = m
+        this.mass = 0
+    }
 
-        const material = new THREE.LineBasicMaterial({
-            color: c,
-            lineWidth: 20
-        })
-        this.trailGeometry = new THREE.Geometry()
-        this.prevPos = Array(100)
-            .fill(0)
-            .map(() => this.pos.clone())
-        this.trailGeometry.vertices = this.prevPos
-        this.line = new THREE.Line(this.trailGeometry, material)
+    init(x, y, z, m) {
+        this.vel.set(0, 0, 0)
+        this.acc.set(0, 0, 0)
+        this.setPos(x, y, z)
+        this.mass = m
+        this.setActive(true)
+    }
+
+    destroy() {
+        this.setActive(false)
+    }
+
+    setActive(activeBoolean) {
+        this.geometry.attributes.active.array[this.index] = activeBoolean
+        this.geometry.attributes.active.needsUpdate = true
+    }
+
+    setColor(r, g, b) {
+        const index = this.index * 3
+        const colorArr = this.geometry.attributes.color.array
+        colorArr[index] = r
+        colorArr[index + 1] = g
+        colorArr[index + 2] = b
+        this.geometry.attributes.color.needsUpdate = true
+    }
+
+    setPos(x, y, z) {
+        const index = this.index * 3
+        const posArr = this.geometry.attributes.position.array
+        posArr[index] = x
+        posArr[index + 1] = y
+        posArr[index + 2] = z
+        this.geometry.attributes.position.needsUpdate = true
     }
 
     applyForceFrom(other) {
-        const distanceVector = new THREE.Vector3().subVectors(
-            other.pos,
-            this.pos
-        )
+        const posArr = this.geometry.attributes.position.array
+        const index = this.index * 3
+        const x = posArr[index]
+        const y = posArr[index + 1]
+        const z = posArr[index + 2]
+        const otherindex = other.index * 3
+        const ox = posArr[otherindex]
+        const oy = posArr[otherindex + 1]
+        const oz = posArr[otherindex + 2]
+
+        const dx = ox - x
+        const dy = oy - y
+        const dz = oz - z
+
+        const distanceVector = new THREE.Vector3(dx, dy, dz)
         const distanceSqrt = distanceVector.lengthSq()
         const direction = distanceVector.normalize()
-        const G = Math.pow(10, -5) * 6.67
-        const acc = direction.multiplyScalar((G * other.mass) / distanceSqrt)
+        const acc = direction.multiplyScalar(
+            (6.67 * other.mass) / 100000 / distanceSqrt
+        )
         this.acc.add(acc)
     }
 
@@ -42,17 +76,21 @@ class Planet {
     }
 
     updatePos() {
-        for (let i = 0; i < this.prevPos.length - 1; i++) {
-            this.prevPos[i].copy(this.prevPos[i + 1])
-        }
-        this.prevPos[this.prevPos.length - 1].copy(this.pos)
-        this.pos.add(this.vel)
+        // for (let i = 0; i < this.prevPos.length - 1; i++) {
+        //     this.prevPos[i].copy(this.prevPos[i + 1])
+        // }
+        // this.prevPos[this.prevPos.length - 1].copy(this.pos)
+        const index = this.index * 3
+        const posArr = this.geometry.attributes.position.array
+        posArr[index] += this.vel.x
+        posArr[index + 1] += this.vel.y
+        posArr[index + 2] += this.vel.z
+        this.geometry.attributes.position.needsUpdate = true
     }
 
     update() {
         this.updateVel()
         this.updatePos()
-        this.line.geometry.verticesNeedUpdate = true
     }
 }
 
