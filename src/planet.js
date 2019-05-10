@@ -91,6 +91,11 @@ class Planet {
     update() {
         this.updateVel()
         this.updatePos()
+
+        if (this.index === 0) {
+            this.geometry.attributes.size.array[this.index] += 0.1
+            this.geometry.attributes.size.needsUpdate = true
+        }
     }
 }
 

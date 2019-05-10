@@ -34,6 +34,11 @@ function breakPlanet(planet) {
         for (let j = 0; j < planetsActive.length; j++) {
             if (intersects[i].index === planetsActive[j].index) {
                 planetsActive[j].setColor(1, 0, 0)
+                console.log(
+                    planetsMesh.geometry.attributes.size.array[
+                        intersects[i].index
+                    ]
+                )
                 break
             }
         }
@@ -70,9 +75,6 @@ function init(canvas) {
 
     raycaster = new THREE.Raycaster()
     raycaster.params.Points.pointSize = geometry.attributes.size.array
-    raycaster.params.Points.matrixWorldInverse = camera.matrixWorldInverse
-    raycaster.params.Points.camera = camera
-    raycaster.near = 1
     mouse = new THREE.Vector2()
 
     for (let i = 0; i < MAX_PLANETS; i++) {
