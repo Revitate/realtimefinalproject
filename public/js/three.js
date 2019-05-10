@@ -25253,9 +25253,6 @@
                 var matrixWorld = this.matrixWorld
                 var threshold = raycaster.params.Points.threshold
                 var pointSize = raycaster.params.Points.pointSize
-                var matrixWorldInverse =
-                    raycaster.params.Points.matrixWorldInverse
-                var camera = raycaster.params.Points.camera
 
                 // Checking boundingSphere distance to ray
 
