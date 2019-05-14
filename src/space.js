@@ -1,13 +1,21 @@
 import Planet from './planet'
 import { vertexShader, fragmentShader } from './shader'
-const { THREE } = window
+import { velocityShader, positionShader } from './physicShader'
+const { THREE, GPUComputationRenderer } = window
 
-let canvas, scene, camera, renderer, controls, mouse, raycaster
+let gpuCompute
+let velocityVariable, positionVariable, particleUniforms
+let geometry
+
+let canvas, scene, camera, renderer, controls, raycaster
 const planetGroup = new THREE.Group()
+const mouse = new THREE.Vector2()
 
 let handleSelect
 
-const MAX_PLANETS = 100
+const WIDTH = 100
+const MAX_PLANETS = WIDTH * WIDTH
+const TIME_STEP = Math.pow(10, 6)
 const FOV = 55
 let planetsMesh
 let sphere
@@ -103,6 +111,113 @@ export function breakPlanet(planet) {
     planet.vel.copy(momentum.divideScalar(mass))
 }
 
+function fillTextures(texturePosition, textureVelocity) {
+    var posArray = texturePosition.image.data
+    var velArray = textureVelocity.image.data
+
+    for (var k = 0, kl = posArray.length; k < kl; k += 4) {
+        posArray[k + 0] = 0
+        posArray[k + 1] = 0
+        posArray[k + 2] = 0
+        posArray[k + 3] = 0
+
+        velArray[k + 0] = 0
+        velArray[k + 1] = 0
+        velArray[k + 2] = 0
+        velArray[k + 3] = 0
+    }
+}
+
+function initComputeRenderer() {
+    // FIX RESOLUTION TO SQUARE
+    gpuCompute = new GPUComputationRenderer(WIDTH, WIDTH, renderer)
+    const dtPosition = gpuCompute.createTexture()
+    const dtVelocity = gpuCompute.createTexture()
+    fillTextures(dtPosition, dtVelocity)
+
+    velocityVariable = gpuCompute.addVariable(
+        'textureVelocity',
+        velocityShader,
+        dtVelocity
+    )
+    positionVariable = gpuCompute.addVariable(
+        'texturePosition',
+        positionShader,
+        dtPosition
+    )
+    positionVariable.material.uniforms.delta = { value: 0.0 }
+    velocityVariable.material.uniforms.delta = { value: 0.0 }
+    positionVariable.material.uniforms.timestep = { value: 0.0 }
+    velocityVariable.material.uniforms.timestep = { value: 0.0 }
+    gpuCompute.setVariableDependencies(velocityVariable, [
+        positionVariable,
+        velocityVariable
+    ])
+    gpuCompute.setVariableDependencies(positionVariable, [
+        positionVariable,
+        velocityVariable
+    ])
+
+    const error = gpuCompute.init()
+    if (error !== null) {
+        console.error(error)
+    }
+}
+
+function initPlanets() {
+    geometry = new THREE.BufferGeometry()
+    const positions = new Float32Array(MAX_PLANETS * 3)
+    const uvs = new Float32Array(MAX_PLANETS * 2)
+    const colors = new Float32Array(MAX_PLANETS * 3)
+    const size = new Float32Array(MAX_PLANETS)
+    const select = new Float32Array(MAX_PLANETS)
+
+    let index = 0
+    for (var j = 0; j < WIDTH; j++) {
+        for (var i = 0; i < WIDTH; i++) {
+            uvs[index++] = i / (WIDTH - 1)
+            uvs[index++] = j / (WIDTH - 1)
+        }
+    }
+
+    geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
+    geometry.addAttribute('uv', new THREE.BufferAttribute(uvs, 2))
+    geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3))
+    geometry.addAttribute('size', new THREE.BufferAttribute(size, 1))
+    geometry.addAttribute('select', new THREE.BufferAttribute(select, 1))
+
+    particleUniforms = {
+        texturePosition: { value: null },
+        textureVelocity: { value: null },
+        texture: {
+            value: new THREE.TextureLoader().load('img/planet-noglow.png')
+        },
+        glow: {
+            value: new THREE.TextureLoader().load('img/planet-glow.png')
+        },
+        screenHeight: {
+            value: window.innerHeight
+        },
+        fov: {
+            value: FOV
+        }
+    }
+
+    const material = new THREE.ShaderMaterial({
+        uniforms: particleUniforms,
+        vertexShader,
+        fragmentShader,
+        vertexColors: THREE.VertexColors,
+        transparent: true
+    })
+    material.extensions.drawBuffers = true
+    console.log(geometry)
+    const particles = new THREE.Points(geometry, material)
+    particles.matrixAutoUpdate = false
+    particles.updateMatrix()
+    scene.add(particles)
+}
+
 function init(_canvas, _handleSelect) {
     canvas = _canvas
     handleSelect = _handleSelect
@@ -118,7 +233,7 @@ function init(_canvas, _handleSelect) {
     camera.lookAt(0, 0, 0)
 
     controls = new THREE.OrbitControls(camera, canvas)
-
+    /*
     const geometry = new THREE.BufferGeometry()
     const positions = new Float32Array(MAX_PLANETS * 3)
     const colors = new Float32Array(MAX_PLANETS * 3)
@@ -137,7 +252,6 @@ function init(_canvas, _handleSelect) {
     raycaster.params.Points.pointSize = geometry.attributes.size.array
     raycaster.params.Points.camera = camera
     raycaster.params.Points.active = active
-    mouse = new THREE.Vector2()
 
     for (let i = 0; i < MAX_PLANETS; i++) {
         const planet = new Planet(i, geometry)
@@ -151,22 +265,6 @@ function init(_canvas, _handleSelect) {
     // p2.vel.set(0, -2, 0)
     const p3 = addPlanet(150, 0, 0, 6)
     p3.vel.set(0, 0, 30000)
-
-    /* for (let i = 1; i < MAX_PLANETS; i++) {
-        const planet = addPlanet(
-            THREE.Math.randFloat(-300, 300),
-            THREE.Math.randFloat(-300, 300),
-            THREE.Math.randFloat(-300, 300),
-            THREE.Math.randFloat(1, 10)
-        )
-        if (planet) {
-            planet.vel.set(
-                THREE.Math.randFloat(-2, 2),
-                THREE.Math.randFloat(-2, 2),
-                THREE.Math.randFloat(-2, 2)
-            )
-        }
-    } */
 
     const material = new THREE.ShaderMaterial({
         vertexShader,
@@ -190,7 +288,7 @@ function init(_canvas, _handleSelect) {
             }
         }
     })
-
+*/
     const sphereGeometry = new THREE.SphereGeometry(900000, 32, 32)
     const texture = new THREE.TextureLoader().load('img/space_background.jpeg')
     const sphereMaterial = new THREE.MeshBasicMaterial({
@@ -200,17 +298,17 @@ function init(_canvas, _handleSelect) {
     sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
     scene.add(sphere)
 
-    planetsMesh = new THREE.Points(geometry, material)
-    planetGroup.add(planetsMesh)
-    scene.add(planetGroup)
+    initPlanets()
 
     renderer = new THREE.WebGLRenderer({ canvas })
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
 
+    initComputeRenderer()
+
     window.addEventListener('resize', onWindowResize, false)
     canvas.addEventListener('mousemove', onMouseMove, false)
-    canvas.addEventListener('click', onMouseClick, false)
+    // canvas.addEventListener('click', onMouseClick, false)
 }
 
 function onMouseClick(event) {
@@ -233,7 +331,7 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
-    planetsMesh.material.uniforms.screenHeight.value = window.innerHeight
+    particleUniforms.screenHeight.value = window.innerHeight
 }
 
 let prevTime = 0
@@ -242,6 +340,26 @@ function update(time, isPlaying, selected) {
     //update planet here
     const delta = time - prevTime
     prevTime = time
+
+    positionVariable.material.uniforms.delta.value = delta
+    velocityVariable.material.uniforms.delta.value = delta
+    positionVariable.material.uniforms.timestep.value = TIME_STEP
+    velocityVariable.material.uniforms.timestep.value = TIME_STEP
+    //console.log('before compute:', Date.now())
+    gpuCompute.compute()
+    //console.log('after compute:', Date.now())
+    particleUniforms[
+        'texturePosition'
+    ].value = gpuCompute.getCurrentRenderTarget(positionVariable).texture
+    particleUniforms[
+        'textureVelocity'
+    ].value = gpuCompute.getCurrentRenderTarget(
+        velocityVariable
+    ).texture /* console.log(
+        'before render:',
+        Date.now()
+    ) */
+    /*
     if (isPlaying) {
         for (let i = 0; i < planets.length; i++) {
             if (planets[i].isActive()) {
@@ -272,9 +390,13 @@ function update(time, isPlaying, selected) {
 
     planetsMesh.geometry.attributes.select.needsUpdate = true
     sphere.position.copy(camera.position)
-
-    renderer.render(scene, camera)
+*/ renderer.render(
+        scene,
+        camera
+    )
+    // console.log('after render:', Date.now())
     controls.update()
+    console.log(particleUniforms.texturePosition.value)
 }
 
 export default { init, update }
