@@ -205,6 +205,7 @@ function init(_canvas, _handleSelect) {
     scene.add(planetGroup)
 
     renderer = new THREE.WebGLRenderer({ canvas })
+    renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
 
     window.addEventListener('resize', onWindowResize, false)
