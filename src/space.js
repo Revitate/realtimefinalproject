@@ -18,13 +18,53 @@ export function addPlanet(x, y, z, m) {
     if (planetsNotActive.length > 0) {
         const planet = planetsNotActive.splice(0, 1)[0]
         planet.init(x, y, z, m)
-        planet.setColor(Math.random(), Math.random(), Math.random())
+        let red = Math.random()
+        let green = Math.random()
+        let blue = Math.random()
+        if (red + green + blue < 1) {
+            const diff = 1 - red + green + blue
+            red = red + diff / 3
+            green = green + diff / 3
+            blue = blue + diff / 3
+        }
+        planet.setColor(red, green, blue)
         // scene.add(planet.line)
         return planet
     }
 }
 
-function removePlanet(planet) {
+export const addPlanetOrbit = (selected, mass) => {
+    const camDirection = camera
+        .getWorldDirection(new THREE.Vector3())
+        .normalize() // camera normal direction
+
+    const camPlane = new THREE.Plane(camDirection)
+    const positionArray = planetsMesh.geometry.attributes.position.array
+    const index = selected.index * 3
+    const selectedPos = new THREE.Vector3(
+        positionArray[index],
+        positionArray[index + 1],
+        positionArray[index + 2]
+    )
+    camPlane.translate(selectedPos)
+    raycaster.setFromCamera(mouse, camera)
+    const ray = raycaster.ray
+    const pos = ray.intersectPlane(camPlane, new THREE.Vector3())
+    const planet = addPlanet(pos.x, pos.y, pos.z, mass)
+    const radiusVector = new THREE.Vector3().subVectors(selectedPos, pos)
+    planet.vel
+        .copy(
+            new THREE.Vector3().crossVectors(
+                radiusVector.clone().normalize(),
+                camDirection
+            )
+        )
+        .setLength(
+            Math.sqrt(((6.67 * selected.mass) / radiusVector.length()) * 10000)
+        )
+}
+
+export function removePlanet(planet) {
     planet.destroy()
     planetsNotActive.push(planet)
     //  scene.remove(planet.line)
@@ -40,10 +80,10 @@ export function breakPlanet(planet) {
     for (let i = 0; i < numberOfShard - 1; i++) {
         const newMass = THREE.Math.randFloat(1, mass * 0.0000005)
         const velocity = new THREE.Vector3(
-            THREE.Math.randFloat(0, 3),
-            THREE.Math.randFloat(0, 3),
-            THREE.Math.randFloat(0, 3)
-        )
+            Math.random(),
+            Math.random(),
+            Math.random()
+        ).multiplyScalar(THREE.Math.randFloat(5000, 60000))
         const addPosition = velocity
             .clone()
             .normalize()
@@ -59,7 +99,6 @@ export function breakPlanet(planet) {
         momentum.sub(velocity.multiplyScalar(newMass))
         mass = mass - newMass
     }
-    console.log(mass)
     planet.mass = mass
     planet.vel.copy(momentum.divideScalar(mass))
 }
@@ -84,7 +123,7 @@ function init(_canvas, _handleSelect) {
     const positions = new Float32Array(MAX_PLANETS * 3)
     const colors = new Float32Array(MAX_PLANETS * 3)
     const active = new Uint8Array(MAX_PLANETS)
-    const size = new Float32Array(MAX_PLANETS).map(() => 20)
+    const size = new Float32Array(MAX_PLANETS)
     const select = new Uint8Array(MAX_PLANETS)
 
     geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3))
@@ -106,12 +145,12 @@ function init(_canvas, _handleSelect) {
         planets.push(planet)
     }
 
-    const p1 = addPlanet(10, 0, 0, 2000000)
-    const p2 = addPlanet(-10, 0, 0, 2000000)
-    p1.vel.set(0, 2, 0)
-    p2.vel.set(0, -2, 0)
+    const p1 = addPlanet(0, 0, 0, 2000000)
+    // const p2 = addPlanet(-10, 0, 0, 2000000)
+    // p1.vel.set(0, 2, 0)
+    // p2.vel.set(0, -2, 0)
     const p3 = addPlanet(150, 0, 0, 6)
-    p3.vel.set(0, 0, 1)
+    p3.vel.set(0, 0, 30000)
 
     /* for (let i = 1; i < MAX_PLANETS; i++) {
         const planet = addPlanet(
@@ -196,8 +235,12 @@ function onWindowResize() {
     planetsMesh.material.uniforms.screenHeight.value = window.innerHeight
 }
 
-async function update(time, isPlaying, selected) {
+let prevTime = 0
+
+function update(time, isPlaying, selected) {
     //update planet here
+    const delta = time - prevTime
+    prevTime = time
     if (isPlaying) {
         for (let i = 0; i < planets.length; i++) {
             if (planets[i].isActive()) {
@@ -213,7 +256,7 @@ async function update(time, isPlaying, selected) {
                 if (planets[i].needRemove()) {
                     removePlanet(planets[i])
                 } else {
-                    planets[i].update()
+                    planets[i].update(delta)
                 }
             }
         }

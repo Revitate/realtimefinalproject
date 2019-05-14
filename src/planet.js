@@ -1,8 +1,11 @@
 const { THREE } = window
 
 const MAX_ACC_SIZE = 5
+const TIME_STEP = Math.pow(10, 6)
 // 1 x,y,z = 10^9 m
-// 1 m = 10^24
+// 1 m = 10^24 kg
+// 1 acc : m/s^2
+// 1 vel : m/s
 class Planet {
     constructor(index, geometry) {
         this.index = index
@@ -16,7 +19,7 @@ class Planet {
         this.vel.set(0, 0, 0)
         this.acc.set(0, 0, 0)
         this.setPos(x, y, z)
-        this.mass = m
+        this.setSize(m)
         this.setActive(true)
     }
 
@@ -35,6 +38,13 @@ class Planet {
     setActive(activeBoolean) {
         this.geometry.attributes.active.array[this.index] = activeBoolean
         this.geometry.attributes.active.needsUpdate = true
+    }
+
+    setSize(mass) {
+        this.geometry.attributes.size.array[this.index] =
+            5 * Math.log(mass) + 10
+        this.geometry.attributes.size.needsUpdate = true
+        this.mass = mass
     }
 
     setColor(r, g, b) {
@@ -71,36 +81,43 @@ class Planet {
         const dz = oz - z
 
         const distanceVector = new THREE.Vector3(dx, dy, dz)
-        const distanceSqrt = distanceVector.lengthSq() || 0.1
+        const distanceSqrt = distanceVector.lengthSq()
         const direction = distanceVector.normalize()
         const acc = direction.multiplyScalar(
-            Math.min((6.67 * other.mass) / 100000 / distanceSqrt, MAX_ACC_SIZE)
+            // Math.min(
+            (6.67 * other.mass) / Math.pow(10, 5) / distanceSqrt
+            //     MAX_ACC_SIZE
+            // ).
         )
-
         this.acc.add(acc)
     }
 
-    updateVel() {
-        this.vel.add(this.acc)
+    updateVel(delta) {
+        this.vel.add(
+            this.acc.clone().multiplyScalar((TIME_STEP * delta) / 1000)
+        )
         this.acc.set(0, 0, 0)
     }
 
-    updatePos() {
+    updatePos(delta) {
         // for (let i = 0; i < this.prevPos.length - 1; i++) {
         //     this.prevPos[i].copy(this.prevPos[i + 1])
         // }
         // this.prevPos[this.prevPos.length - 1].copy(this.pos)
+        const vel = this.vel
+            .clone()
+            .multiplyScalar((Math.pow(10, -9) * TIME_STEP * delta) / 1000)
         const index = this.index * 3
         const posArr = this.geometry.attributes.position.array
-        posArr[index] += this.vel.x
-        posArr[index + 1] += this.vel.y
-        posArr[index + 2] += this.vel.z
+        posArr[index] += vel.x
+        posArr[index + 1] += vel.y
+        posArr[index + 2] += vel.z
         this.geometry.attributes.position.needsUpdate = true
     }
 
-    update() {
-        this.updateVel()
-        this.updatePos()
+    update(delta) {
+        this.updateVel(delta)
+        this.updatePos(delta)
     }
 }
 

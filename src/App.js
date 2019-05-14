@@ -1,7 +1,7 @@
 import React, { Component, createRef, useState } from 'react'
-import Space, { addPlanet, breakPlanet } from './space'
+import Space, { addPlanetOrbit, breakPlanet, removePlanet } from './space'
 
-const { WEBGL, THREE, Stats, requestAnimationFrame } = window
+const { WEBGL, Stats, requestAnimationFrame } = window
 
 const Panel = props => {
     const [_, setState] = useState({
@@ -15,20 +15,18 @@ const Panel = props => {
             <button onClick={props.handleTogglePlaying}>
                 {props.playing ? 'stop' : 'start'}
             </button>
-            <button
-                onClick={() => {
-                    addPlanet(
-                        THREE.Math.randFloat(-200, 200),
-                        THREE.Math.randFloat(-200, 200),
-                        THREE.Math.randFloat(-200, 200),
-                        THREE.Math.randFloat(3, 20)
-                    )
-                }}
-            >
-                add planet
-            </button>
             {props.selected && (
                 <div>
+                    <input
+                        type="number"
+                        value={props.massAdd}
+                        onChange={e => {
+                            props.handleChangeMassAdd(Number(e.target.value))
+                        }}
+                    />
+                    <button onClick={props.handleToggleAddingPlanet}>
+                        {props.addingPlanet ? 'cancel' : 'add planet'}
+                    </button>
                     <input
                         type="number"
                         value={props.selected.mass}
@@ -37,7 +35,7 @@ const Panel = props => {
                             setState({ m: props.selected.mass })
                         }}
                     />
-                    <br />
+
                     <input
                         type="number"
                         value={props.selected.vel.x}
@@ -48,7 +46,7 @@ const Panel = props => {
                         }}
                         step="0.1"
                     />
-                    <br />
+
                     <input
                         type="number"
                         value={props.selected.vel.y}
@@ -58,7 +56,7 @@ const Panel = props => {
                         }}
                         step="0.1"
                     />
-                    <br />
+
                     <input
                         type="number"
                         value={props.selected.vel.z}
@@ -68,13 +66,19 @@ const Panel = props => {
                         }}
                         step="0.1"
                     />
-                    <br />
+
                     <button
                         onClick={() => {
                             breakPlanet(props.selected)
-                        }}
-                    >
+                        }}>
                         BOOM
+                    </button>
+                    <button
+                        onClick={() => {
+                            removePlanet(props.selected)
+                            props.handleSelect(null)
+                        }}>
+                        remove this planet
                     </button>
                 </div>
             )}
@@ -85,7 +89,9 @@ const Panel = props => {
 class App extends Component {
     state = {
         playing: true,
-        selected: null
+        selected: null,
+        addingPlanet: false,
+        massAdd: 1
     }
 
     constructor(props) {
@@ -125,17 +131,37 @@ class App extends Component {
         this.setState({ playing: !this.state.playing })
     }
 
+    handleChangeMassAdd = value => {
+        this.setState({ massAdd: value })
+    }
+
+    handleToggleAddingPlanet = () => {
+        this.setState({ addingPlanet: !this.state.addingPlanet })
+    }
+
     render() {
-        const { playing } = this.state
+        const { playing, massAdd, selected, addingPlanet } = this.state
         return (
             <>
                 {WEBGL.isWebGLAvailable() === false &&
                     WEBGL.getWebGLErrorMessage()}
-                <canvas ref={this.canvas} />
+                <canvas
+                    onClick={() => {
+                        if (addingPlanet) {
+                            addPlanetOrbit(selected, massAdd)
+                        }
+                    }}
+                    ref={this.canvas}
+                />
                 <Panel
+                    massAdd={massAdd}
                     playing={playing}
                     handleTogglePlaying={this.handleTogglePlaying}
-                    selected={this.state.selected}
+                    addingPlanet={addingPlanet}
+                    selected={selected}
+                    handleSelect={this.handleSelect}
+                    handleChangeMassAdd={this.handleChangeMassAdd}
+                    handleToggleAddingPlanet={this.handleToggleAddingPlanet}
                 />
             </>
         )
