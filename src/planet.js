@@ -1,5 +1,6 @@
 const { THREE } = window
 
+const MAX_ACC_SIZE = 5
 // 1 x,y,z = 10^9 m
 // 1 m = 10^24
 class Planet {
@@ -21,6 +22,14 @@ class Planet {
 
     destroy() {
         this.setActive(false)
+    }
+
+    needRemove() {
+        return false
+    }
+
+    isActive() {
+        return this.geometry.attributes.active.array[this.index] === 1
     }
 
     setActive(activeBoolean) {
@@ -62,11 +71,12 @@ class Planet {
         const dz = oz - z
 
         const distanceVector = new THREE.Vector3(dx, dy, dz)
-        const distanceSqrt = distanceVector.lengthSq()
+        const distanceSqrt = distanceVector.lengthSq() || 0.1
         const direction = distanceVector.normalize()
         const acc = direction.multiplyScalar(
-            (6.67 * other.mass) / 100000 / distanceSqrt
+            Math.min((6.67 * other.mass) / 100000 / distanceSqrt, MAX_ACC_SIZE)
         )
+
         this.acc.add(acc)
     }
 
@@ -91,11 +101,6 @@ class Planet {
     update() {
         this.updateVel()
         this.updatePos()
-
-        if (this.index === 0) {
-            this.geometry.attributes.size.array[this.index] += 0.1
-            this.geometry.attributes.size.needsUpdate = true
-        }
     }
 }
 

@@ -25252,11 +25252,13 @@
                 var geometry = this.geometry
                 var matrixWorld = this.matrixWorld
                 var threshold = raycaster.params.Points.threshold
-                var pointSize = raycaster.params.Points.pointSize
+                var pointSizes = raycaster.params.Points.pointSize
+                var pointActives = raycaster.params.Points.active
+                var cam = raycaster.params.Points.camera
 
                 // Checking boundingSphere distance to ray
 
-                if (geometry.boundingSphere === null)
+                /* if (geometry.boundingSphere === null)
                     geometry.computeBoundingSphere()
 
                 sphere.copy(geometry.boundingSphere)
@@ -25264,9 +25266,7 @@
                 sphere.radius += threshold
 
                 if (raycaster.ray.intersectsSphere(sphere) === false) return
-
-                //
-
+ */
                 inverseMatrix.getInverse(matrixWorld)
                 ray.copy(raycaster.ray).applyMatrix4(inverseMatrix)
 
@@ -25274,16 +25274,24 @@
                 var intersectPoint = new Vector3()
 
                 function testPoint(point, index) {
-                    var localThreshold =
-                        pointSize[index] /
-                        2 /
-                        ((object.scale.x + object.scale.y + object.scale.z) / 3)
-                    var localThresholdSq = localThreshold * localThreshold
-
+                    if (pointActives[index] === 0) return
                     var rayPointDistanceSq = ray.distanceSqToPoint(point)
+                    ray.closestPointToPoint(point, intersectPoint)
 
-                    if (rayPointDistanceSq < localThresholdSq) {
-                        ray.closestPointToPoint(point, intersectPoint)
+                    var pointRadius = pointSizes[index] / 2
+
+                    var pointWorld = point.clone().applyMatrix4(matrixWorld) // point in wordl space
+                    var camDirection = cam
+                        .getWorldDirection(new Vector3())
+                        .normalize() // camera normal direction
+
+                    var camPlane = new Plane(camDirection)
+                    camPlane.translate(pointWorld)
+
+                    var closestPoint = new Vector3()
+                    ray.intersectPlane(camPlane, closestPoint)
+
+                    if (pointWorld.distanceTo(closestPoint) < pointRadius) {
                         intersectPoint.applyMatrix4(matrixWorld)
 
                         var distance = raycaster.ray.origin.distanceTo(
