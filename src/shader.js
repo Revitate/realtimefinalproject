@@ -1,21 +1,16 @@
 export const vertexShader = `
 uniform float screenHeight;
 uniform float fov;
-uniform sampler2D texturePosition;
-uniform sampler2D textureVelocity;
 
 varying vec3 vColor;
+attribute float active;
 attribute float size;
 attribute float select;
 varying float vActive;
+varying vec2 vUv;
 varying float vSelect;
 void main() {
-    vec4 posTemp = texture2D( texturePosition, uv );
-    vec3 pos = posTemp.xyz;
-    float active = posTemp.w;
-    vec4 velTemp = texture2D( textureVelocity, uv );
-    vec3 vel = velTemp.xyz;
-    float mass = velTemp.w;
+    vUv = uv;
     vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
     gl_Position = projectionMatrix * mvPosition;
     float distancePerPixels = (tan(fov / 2.0) * mvPosition.z) / (screenHeight / 2.0);
@@ -29,6 +24,7 @@ void main() {
 export const fragmentShader = `
 varying vec3 vColor;
 varying float vActive;
+varying vec2 vUv;
 varying float vSelect;
 uniform sampler2D texture;
 uniform sampler2D glow;
