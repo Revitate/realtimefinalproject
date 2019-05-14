@@ -301,7 +301,6 @@ function init(_canvas, _handleSelect) {
     initPlanets()
 
     renderer = new THREE.WebGLRenderer({ canvas })
-    renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth, window.innerHeight)
 
     initComputeRenderer()

@@ -19,7 +19,7 @@ void main() {
     vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
     gl_Position = projectionMatrix * mvPosition;
     float distancePerPixels = (tan(fov / 2.0) * mvPosition.z) / (screenHeight / 2.0);
-    gl_PointSize = size / distancePerPixels * 2.5;
+    gl_PointSize = size / distancePerPixels * 2.0;
     vColor = color;
     vActive = active;
     vSelect = select;
