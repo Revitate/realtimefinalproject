@@ -1,7 +1,5 @@
 const { THREE } = window
 
-const MAX_ACC_SIZE = 5
-const TIME_STEP = Math.pow(10, 6)
 // 1 x,y,z = 10^9 m
 // 1 m = 10^24 kg
 // 1 acc : m/s^2
@@ -93,9 +91,7 @@ class Planet {
     }
 
     updateVel(delta) {
-        this.vel.add(
-            this.acc.clone().multiplyScalar((TIME_STEP * delta) / 1000)
-        )
+        this.vel.add(this.acc.clone().multiplyScalar(delta))
         this.acc.set(0, 0, 0)
     }
 
@@ -104,9 +100,7 @@ class Planet {
         //     this.prevPos[i].copy(this.prevPos[i + 1])
         // }
         // this.prevPos[this.prevPos.length - 1].copy(this.pos)
-        const vel = this.vel
-            .clone()
-            .multiplyScalar((Math.pow(10, -9) * TIME_STEP * delta) / 1000)
+        const vel = this.vel.clone().multiplyScalar(Math.pow(10, -9) * delta)
         const index = this.index * 3
         const posArr = this.geometry.attributes.position.array
         posArr[index] += vel.x

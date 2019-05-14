@@ -6,6 +6,7 @@ let canvas, scene, camera, renderer, controls, mouse, raycaster
 const planetGroup = new THREE.Group()
 
 let handleSelect
+let selected
 
 const MAX_PLANETS = 100
 const FOV = 55
@@ -52,6 +53,7 @@ export const addPlanetOrbit = (selected, mass) => {
     const pos = ray.intersectPlane(camPlane, new THREE.Vector3())
     const planet = addPlanet(pos.x, pos.y, pos.z, mass)
     const radiusVector = new THREE.Vector3().subVectors(selectedPos, pos)
+    if (planet === undefined) return
     planet.vel
         .copy(
             new THREE.Vector3().crossVectors(
@@ -109,7 +111,7 @@ function init(_canvas, _handleSelect) {
     scene = new THREE.Scene()
     camera = new THREE.PerspectiveCamera(
         FOV,
-        window.innerWidth / window.innerHeight,
+        (window.innerWidth - 300) / window.innerHeight,
         0.1,
         1000000
     )
@@ -206,7 +208,7 @@ function init(_canvas, _handleSelect) {
 
     renderer = new THREE.WebGLRenderer({ canvas })
     renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setSize(window.innerWidth - 300, window.innerHeight)
 
     window.addEventListener('resize', onWindowResize, false)
     canvas.addEventListener('mousemove', onMouseMove, false)
@@ -218,7 +220,11 @@ function onMouseClick(event) {
     const intersects = raycaster.intersectObjects(planetGroup.children)
     if (intersects.length > 0) {
         const targetIndex = intersects[0].index
-        handleSelect(planets[targetIndex])
+        if (selected && selected.index === targetIndex) {
+            handleSelect(null)
+        } else {
+            handleSelect(planets[targetIndex])
+        }
         //breakPlanet(planets[targetIndex])
     }
     console.log(intersects)
@@ -230,18 +236,22 @@ function onMouseMove(event) {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight
+    camera.aspect = (window.innerWidth - 300) / window.innerHeight
     camera.updateProjectionMatrix()
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setSize(window.innerWidth - 300, window.innerHeight)
     planetsMesh.material.uniforms.screenHeight.value = window.innerHeight
 }
 
 let prevTime = 0
 
-function update(time, isPlaying, selected) {
+function update(time, isPlaying, _selected, timestep) {
     //update planet here
+    selected = _selected
+
     const delta = time - prevTime
     prevTime = time
+    const simdelta = (timestep * delta) / 1000
+
     if (isPlaying) {
         for (let i = 0; i < planets.length; i++) {
             if (planets[i].isActive()) {
@@ -257,7 +267,7 @@ function update(time, isPlaying, selected) {
                 if (planets[i].needRemove()) {
                     removePlanet(planets[i])
                 } else {
-                    planets[i].update(delta)
+                    planets[i].update(simdelta)
                 }
             }
         }

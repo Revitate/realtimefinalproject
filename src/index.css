@@ -11,14 +11,30 @@ canvas {
 
 .panel {
     position: absolute;
+    width: 300px;
+    height: 100%;
     right: 0;
     top: 0;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
+    color: white;
+    background-color: black;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
-.panel div {
+button {
+    width: 100%;
+    margin: 3px 0 0 0;
+}
+
+input {
+    margin: 3px 3px 0 3px;
+    text-align: right;
+}
+
+.Input {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
 }

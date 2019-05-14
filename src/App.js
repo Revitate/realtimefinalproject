@@ -3,84 +3,140 @@ import Space, { addPlanetOrbit, breakPlanet, removePlanet } from './space'
 
 const { WEBGL, Stats, requestAnimationFrame } = window
 
+let timeStep = Math.pow(10, 6)
+
+const Input = props => (
+    <div className="Input">
+        <span dangerouslySetInnerHTML={{ __html: props.frontText }} />
+        <input
+            type={props.type}
+            value={props.value}
+            onChange={props.onChange}
+            min={props.min}
+            max={props.max}
+            step={props.step}
+            style={props.inputStyle}
+        />
+        <span dangerouslySetInnerHTML={{ __html: props.backText }} />
+    </div>
+)
+
 const Panel = props => {
-    const [_, setState] = useState({
+    // eslint-disable-next-line no-unused-vars
+    const [state, setState] = useState({
         m: 0,
         x: 0,
         y: 0,
-        z: 0
+        z: 0,
+        timeStep: Math.log10(timeStep)
     })
     return (
         <div className="panel">
+            <Input
+                type="range"
+                min={5}
+                max={8}
+                defaultValue={state.timeStep}
+                onChange={e => {
+                    timeStep = Math.pow(10, Number(e.target.value))
+                    setState({ timeStep: Number(e.target.value) })
+                }}
+                step={0.1}
+                inputStyle={{ width: '100%' }}
+            />
+            <div> Speed up : {Math.round(timeStep)} times</div>
             <button onClick={props.handleTogglePlaying}>
-                {props.playing ? 'stop' : 'start'}
+                {props.playing ? 'Stop' : 'Start'}
             </button>
             {props.selected && (
-                <div>
-                    <input
-                        type="number"
-                        value={props.massAdd}
-                        onChange={e => {
-                            props.handleChangeMassAdd(Number(e.target.value))
-                        }}
-                    />
-                    <button onClick={props.handleToggleAddingPlanet}>
-                        {props.addingPlanet ? 'cancel' : 'add planet'}
-                    </button>
-                    <input
-                        type="number"
-                        value={props.selected.mass}
-                        onChange={e => {
-                            props.selected.mass = Number(e.target.value)
-                            setState({ m: props.selected.mass })
-                        }}
-                    />
+                <>
+                    <div>
+                        <h3>Add New Planet</h3>
+                        <Input
+                            frontText="mass : "
+                            backText=" x 10<sup>24</sup> kg"
+                            type="number"
+                            value={props.massAdd}
+                            onChange={e => {
+                                props.handleChangeMassAdd(
+                                    Number(e.target.value)
+                                )
+                            }}
+                        />
+                        <button onClick={props.handleToggleAddingPlanet}>
+                            {props.addingPlanet ? 'Cancel' : 'Add Planet'}
+                        </button>
+                    </div>
+                    <div>
+                        <h3>Selected Planet</h3>
+                        <Input
+                            frontText="mass : "
+                            backText=" x 10<sup>24</sup> kg"
+                            type="number"
+                            value={props.selected.mass}
+                            onChange={e => {
+                                props.selected.setSize(Number(e.target.value))
+                                setState({ m: props.selected.mass })
+                            }}
+                        />
+                        <h4>Velocity</h4>
+                        <Input
+                            frontText="x : "
+                            backText=" m/s"
+                            type="number"
+                            value={props.selected.vel.x}
+                            onChange={e => {
+                                console.log(props.selected)
+                                props.selected.vel.setX(Number(e.target.value))
+                                setState({ x: props.selected.vel.x })
+                            }}
+                            step="0.1"
+                        />
 
-                    <input
-                        type="number"
-                        value={props.selected.vel.x}
-                        onChange={e => {
-                            console.log(props.selected)
-                            props.selected.vel.setX(Number(e.target.value))
-                            setState({ x: props.selected.vel.x })
-                        }}
-                        step="0.1"
-                    />
+                        <Input
+                            frontText="y : "
+                            backText=" m/s"
+                            type="number"
+                            value={props.selected.vel.y}
+                            onChange={e => {
+                                props.selected.vel.setY(Number(e.target.value))
+                                setState({ x: props.selected.vel.y })
+                            }}
+                            step="0.1"
+                        />
 
-                    <input
-                        type="number"
-                        value={props.selected.vel.y}
-                        onChange={e => {
-                            props.selected.vel.setY(Number(e.target.value))
-                            setState({ x: props.selected.vel.y })
-                        }}
-                        step="0.1"
-                    />
-
-                    <input
-                        type="number"
-                        value={props.selected.vel.z}
-                        onChange={e => {
-                            props.selected.vel.setZ(Number(e.target.value))
-                            setState({ x: props.selected.vel.z })
-                        }}
-                        step="0.1"
-                    />
-
-                    <button
-                        onClick={() => {
-                            breakPlanet(props.selected)
-                        }}>
-                        BOOM
-                    </button>
-                    <button
-                        onClick={() => {
-                            removePlanet(props.selected)
-                            props.handleSelect(null)
-                        }}>
-                        remove this planet
-                    </button>
-                </div>
+                        <Input
+                            frontText="z : "
+                            backText=" m/s"
+                            type="number"
+                            value={props.selected.vel.z}
+                            onChange={e => {
+                                props.selected.vel.setZ(Number(e.target.value))
+                                setState({ x: props.selected.vel.z })
+                            }}
+                            step="0.1"
+                        />
+                    </div>
+                    <div>
+                        <button
+                            onClick={() => {
+                                breakPlanet(props.selected)
+                            }}
+                        >
+                            Explode This Planet
+                        </button>
+                    </div>
+                    <div>
+                        <button
+                            onClick={() => {
+                                removePlanet(props.selected)
+                                props.handleSelect(null)
+                            }}
+                        >
+                            Remove This Planet
+                        </button>
+                    </div>
+                </>
             )}
         </div>
     )
@@ -114,7 +170,7 @@ class App extends Component {
                 time,
                 this.state.playing,
                 this.state.selected,
-                this.toggleTrigger
+                timeStep
             )
 
             stats.update()
@@ -124,7 +180,11 @@ class App extends Component {
     }
 
     handleSelect = planet => {
-        this.setState({ selected: planet })
+        if (planet === null) {
+            this.setState({ selected: planet, addingPlanet: false })
+        } else {
+            this.setState({ selected: planet })
+        }
     }
 
     handleTogglePlaying = () => {
@@ -147,7 +207,7 @@ class App extends Component {
                     WEBGL.getWebGLErrorMessage()}
                 <canvas
                     onClick={() => {
-                        if (addingPlanet) {
+                        if (addingPlanet && selected) {
                             addPlanetOrbit(selected, massAdd)
                         }
                     }}
