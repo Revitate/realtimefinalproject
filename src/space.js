@@ -195,7 +195,6 @@ function initScene() {
     camera.position.y = 500
     camera.lookAt(0, 0, 0)
     controls = new THREE.OrbitControls(camera, canvas)
-    controls.enablePan = false
     controls.enableDamping = true
     controls.dampingFactor = 0.25
     renderer = new THREE.WebGLRenderer({ canvas })
@@ -256,6 +255,7 @@ function initPlanetGeometry() {
     const planetsMesh = new THREE.Points(geometry, material)
     planetGroup.add(planetsMesh)
     scene.add(planetGroup)
+    planetsMesh.frustumCulled = false
 
     // background
     const sphereGeometry = new THREE.SphereGeometry(900000, 32, 32)
@@ -345,6 +345,7 @@ async function update(time, isPlaying, _selected, timestep) {
         }
         if (selected && i === selected.index) {
             geometry.attributes.select.array[i] = 1
+            controls.target.copy(selected.getPos())
         } else {
             geometry.attributes.select.array[i] = 0
         }
