@@ -31,6 +31,7 @@ uniform sampler2D glow;
 
 void main() {
     vec4 outColor = texture2D( texture, gl_PointCoord );
+    if (vActive < 1.0) discard;
     if (vSelect > 0.0) {
         vec4 glowTexture = texture2D( glow, gl_PointCoord);
         if (glowTexture.a < 0.3) discard;
@@ -38,11 +39,11 @@ void main() {
             gl_FragColor = glowTexture;
         }
         else{
-            gl_FragColor = glowTexture * vec4( vColor.rgb, vActive );
+            gl_FragColor = glowTexture * vec4( vColor.rgb, 1.0 );
         }
     } else {
         if ( outColor.a < 0.5 ) discard;
-        gl_FragColor = outColor * vec4( vColor.rgb, vActive );
+        gl_FragColor = outColor * vec4( vColor.rgb, 1.0 );
     }
 }
 `
