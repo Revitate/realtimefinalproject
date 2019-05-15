@@ -132,7 +132,9 @@ function initScene() {
     camera.position.y = 500
     camera.lookAt(0, 0, 0)
     controls = new THREE.OrbitControls(camera, canvas)
-<<<<<<< HEAD
+    controls.enablePan = false
+    controls.enableDamping = true
+    controls.dampingFactor = 0.25
     renderer = new THREE.WebGLRenderer({ canvas })
     renderer.setPixelRatio(window.devicePixelRatio)
     renderer.setSize(window.innerWidth - 300, window.innerHeight)
@@ -145,11 +147,6 @@ const planetsNotActive = []
 const planets = []
 function initPlanetGeometry() {
     geometry = new THREE.BufferGeometry()
-=======
-    controls.enablePan = false
-    controls.enableDamping = true
-    controls.dampingFactor = 0.25
->>>>>>> a02d18f696acc452c4929fa042336a85a5d3b481
 
     const positions = new Float32Array(MAX_PLANETS * 3)
     const velocity = new Float32Array(MAX_PLANETS * 3)
@@ -270,32 +267,13 @@ async function update(time, isPlaying, _selected, timestep) {
     prevTime = time
     const simdelta = (timestep * delta) / 1000
 
-<<<<<<< HEAD
     await updateloop(isPlaying, simdelta)
 
-=======
-    if (isPlaying) {
-        for (let i = 0; i < planets.length; i++) {
-            if (planets[i].isActive()) {
-                for (let j = 0; j < planets.length; j++) {
-                    if (i !== j && planets[j].isActive()) {
-                        planets[i].applyForceFrom(planets[j])
-                    }
-                }
-            }
-        }
-        for (let i = 0; i < planets.length; i++) {
-            if (planets[i].isActive()) {
-                if (planets[i].needRemove(camera)) {
-                    removePlanet(planets[i])
-                } else {
-                    planets[i].update(simdelta)
-                }
-            }
-        }
-    }
->>>>>>> a02d18f696acc452c4929fa042336a85a5d3b481
     for (let i = 0; i < planets.length; i++) {
+        if (planets[i].needRemove(camera)) {
+            removePlanet(planets[i])
+            handleSelect(null)
+        }
         if (selected && i === selected.index) {
             geometry.attributes.select.array[i] = 1
         } else {
