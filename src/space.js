@@ -82,9 +82,9 @@ export function breakPlanet(planet) {
     for (let i = 0; i < numberOfShard - 1; i++) {
         const newMass = THREE.Math.randFloat(1, mass * 0.0000005)
         const velocity = new THREE.Vector3(
-            Math.random(),
-            Math.random(),
-            Math.random()
+            THREE.Math.randFloat(-1, 1),
+            THREE.Math.randFloat(-1, 1),
+            THREE.Math.randFloat(-1, 1)
         ).multiplyScalar(THREE.Math.randFloat(5000, 60000))
         const addPosition = velocity
             .clone()
@@ -120,6 +120,9 @@ function init(_canvas, _handleSelect) {
     camera.lookAt(0, 0, 0)
 
     controls = new THREE.OrbitControls(camera, canvas)
+    controls.enablePan = false
+    controls.enableDamping = true
+    controls.dampingFactor = 0.25
 
     const geometry = new THREE.BufferGeometry()
     const positions = new Float32Array(MAX_PLANETS * 3)
@@ -264,7 +267,7 @@ function update(time, isPlaying, _selected, timestep) {
         }
         for (let i = 0; i < planets.length; i++) {
             if (planets[i].isActive()) {
-                if (planets[i].needRemove()) {
+                if (planets[i].needRemove(camera)) {
                     removePlanet(planets[i])
                 } else {
                     planets[i].update(simdelta)
