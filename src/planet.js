@@ -21,7 +21,18 @@ class Planet {
         this.setActive(false)
     }
 
-    needRemove() {
+    needRemove(camera) {
+        const index = this.index * 3
+        const posArr = this.geometry.attributes.position.array
+        const posVec = new THREE.Vector3(
+            posArr[index],
+            posArr[index + 1],
+            posArr[index + 2]
+        )
+        const dist = posVec.sub(camera.position).length()
+        if (dist > 300000) {
+            return true
+        }
         return false
     }
 
