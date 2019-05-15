@@ -4,7 +4,13 @@ import WorkerRunner from './workerRunner'
 
 const { THREE } = window
 
-const MAX_PLANETS = 1000
+const urlParams = new URLSearchParams(window.location.search)
+
+const MAX_PLANETS = Math.min(
+    Number(urlParams.get('maxPlanets')) || navigator.hardwareConcurrency * 200,
+    navigator.hardwareConcurrency * 700
+)
+console.log('max planets number: ', MAX_PLANETS)
 const FOV = 55
 
 export function addPlanet(x, y, z, m) {
@@ -78,7 +84,7 @@ export function breakPlanet(planet) {
             THREE.Math.randFloat(-1, 1),
             THREE.Math.randFloat(-1, 1),
             THREE.Math.randFloat(-1, 1)
-        ).multiplyScalar(THREE.Math.randFloat(80000, 80000))
+        ).multiplyScalar(THREE.Math.randFloat(60000, 80000))
         const addPosition = velocity
             .clone()
             .setLength(sizes[planet.index] * 0.5)
@@ -111,15 +117,70 @@ function init(_canvas, _handleSelect) {
 
     initMouseRaycast()
 
-    addPlanet(0, 0, 0, 2000000)
-    /* for (let i = 1; i < 200; i++) {
-        addPlanet(
-            THREE.Math.randFloat(-300, 300),
-            THREE.Math.randFloat(-300, 300),
-            THREE.Math.randFloat(-300, 300),
-            6
-        )
-    } */
+    initTemplate()
+}
+
+function initTemplate() {
+    const template = Number(urlParams.get('template')) || 0
+    switch (template) {
+        case 1:
+            console.log('template number: ', template)
+            addPlanet(0, 0, 0, 2000000)
+            break
+        case 2:
+            console.log('template number: ', template)
+            addPlanet(0, 0, 0, 2000000)
+            for (let i = 1; i < MAX_PLANETS; i++) {
+                addPlanet(
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(5, 20)
+                )
+            }
+            break
+        case 3:
+            console.log('template number: ', template)
+            addPlanet(0, 0, 0, 2000000)
+            const planet = addPlanet(150, 0, 0, 6)
+            planet.setVel(0, 0, 30000)
+
+            break
+        case 4:
+            console.log('template number: ', template)
+            const sun = addPlanet(0, 0, 0, 2000000)
+            for (let i = 1; i < MAX_PLANETS; i++) {
+                const planet = addPlanet(
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(-300, 300),
+                    THREE.Math.randFloat(5, 20)
+                )
+                const radiusVector = sun.getPos().sub(planet.getPos())
+                const vel = new THREE.Vector3()
+                    .crossVectors(
+                        radiusVector.clone().normalize(),
+                        new THREE.Vector3(
+                            THREE.Math.randFloat(-1, 1),
+                            THREE.Math.randFloat(-1, 1),
+                            THREE.Math.randFloat(-1, 1)
+                        )
+                    )
+                    .setLength(
+                        Math.sqrt(
+                            ((6.67 * sun.getMass()) / radiusVector.length()) *
+                                10000
+                        )
+                    )
+                planet.setVel(vel.x, vel.y, vel.z)
+            }
+            break
+
+        default:
+            console.log('template number: ', 1)
+            addPlanet(0, 0, 0, 2000000)
+            break
+    }
 }
 
 let scene, camera, renderer, controls
@@ -278,7 +339,7 @@ async function update(time, isPlaying, _selected, timestep) {
     for (let i = 0; i < planets.length; i++) {
         if (planets[i].needRemove(camera)) {
             removePlanet(planets[i])
-            if (i === selected.index) {
+            if (selected && i === selected.index) {
                 handleSelect(null)
             }
         }
