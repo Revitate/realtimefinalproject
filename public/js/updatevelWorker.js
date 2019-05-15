@@ -3,7 +3,6 @@ importScripts('./three.js')
 onmessage = e => {
     const { position, mass, velocity, active, delta, st, ed } = e.data
     const output = new Float32Array((ed - st) * 3)
-    let k = 0
     for (let i = st; i < ed; i++) {
         if (active[i] === 0) continue
 
@@ -32,9 +31,9 @@ onmessage = e => {
             )
         }
         acc.multiplyScalar(delta)
-        output[k++] = velocity[index] + acc.x
-        output[k++] = velocity[index + 1] + acc.y
-        output[k++] = velocity[index + 2] + acc.z
+        output[index - st * 3] = velocity[index] + acc.x
+        output[index - st * 3 + 1] = velocity[index + 1] + acc.y
+        output[index - st * 3 + 2] = velocity[index + 2] + acc.z
     }
     postMessage(output)
 }

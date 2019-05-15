@@ -164,7 +164,6 @@ class App extends Component {
         Space.init(this.canvas.current, this.handleSelect)
 
         const loop = async time => {
-            requestAnimationFrame(loop)
             await Space.update(
                 time,
                 this.state.playing,
@@ -172,6 +171,7 @@ class App extends Component {
                 timeStep
             )
             stats.update()
+            requestAnimationFrame(loop)
         }
 
         requestAnimationFrame(loop)

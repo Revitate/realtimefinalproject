@@ -4,26 +4,31 @@ import WorkerRunner from './workerRunner'
 
 const { THREE } = window
 
-const MAX_PLANETS = 1000
+const MAX_PLANETS = 4000
 const FOV = 55
 
 export function addPlanet(x, y, z, m) {
-    if (planetsNotActive.length > 0) {
-        const planet = planetsNotActive.splice(0, 1)[0]
-        planet.init(x, y, z, m)
-        let red = Math.random()
-        let green = Math.random()
-        let blue = Math.random()
-        if (red + green + blue < 1) {
-            const diff = 1 - red + green + blue
-            red = red + diff / 3
-            green = green + diff / 3
-            blue = blue + diff / 3
+    let planet
+    for (let p of planets) {
+        if (p.isActive() === false) {
+            planet = p
+            break
         }
-        planet.setColor(red, green, blue)
-        // scene.add(planet.line)
-        return planet
     }
+
+    if (planet === undefined) return
+    planet.init(x, y, z, m)
+    let red = Math.random()
+    let green = Math.random()
+    let blue = Math.random()
+    if (red + green + blue < 1) {
+        const diff = 1 - red + green + blue
+        red = red + diff / 3
+        green = green + diff / 3
+        blue = blue + diff / 3
+    }
+    planet.setColor(red, green, blue)
+    return planet
 }
 
 export const addPlanetOrbit = (selected, mass) => {
@@ -58,8 +63,6 @@ export const addPlanetOrbit = (selected, mass) => {
 
 export function removePlanet(planet) {
     planet.destroy()
-    planetsNotActive.push(planet)
-    //  scene.remove(planet.line)
 }
 
 export function breakPlanet(planet) {
@@ -110,7 +113,7 @@ function init(_canvas, _handleSelect) {
     initMouseRaycast()
 
     addPlanet(0, 0, 0, 2000000)
-    for (let i = 1; i < 200; i++) {
+    for (let i = 1; i < MAX_PLANETS; i++) {
         addPlanet(
             THREE.Math.randFloat(-300, 300),
             THREE.Math.randFloat(-300, 300),
@@ -143,8 +146,7 @@ function initScene() {
 
 let geometry, material, sphere
 const planetGroup = new THREE.Group()
-const planetsNotActive = []
-const planets = []
+const planets = new Array(MAX_PLANETS)
 function initPlanetGeometry() {
     geometry = new THREE.BufferGeometry()
 
@@ -166,8 +168,7 @@ function initPlanetGeometry() {
 
     for (let i = 0; i < MAX_PLANETS; i++) {
         const planet = new Planet(i, geometry)
-        planetsNotActive.push(planet)
-        planets.push(planet)
+        planets[i] = planet
     }
     material = new THREE.ShaderMaterial({
         vertexShader,
@@ -207,20 +208,26 @@ function initPlanetGeometry() {
     scene.add(sphere)
 }
 
-const updateVelWorkers = []
-const updatePosWorkers = []
+const numberWorker = navigator.hardwareConcurrency || 4
+const iterPerWorker = Math.ceil(MAX_PLANETS / numberWorker)
+const updateVelWorkers = new Array(numberWorker)
+const updatePosWorkers = new Array(numberWorker)
 function initWorker() {
-    const numberWorker = navigator.hardwareConcurrency || 4
-    const iterPerWorker = Math.ceil(MAX_PLANETS / numberWorker)
+    let index = 0
     for (let i = 0; i < MAX_PLANETS; i += iterPerWorker) {
         const st = i
         const ed = Math.min(i + iterPerWorker, MAX_PLANETS)
-        updateVelWorkers.push(
-            new WorkerRunner('./js/updateVelWorker.js', st, ed)
+        updateVelWorkers[index] = new WorkerRunner(
+            './js/updateVelWorker.js',
+            st,
+            ed
         )
-        updatePosWorkers.push(
-            new WorkerRunner('./js/updatePosWorker.js', st, ed)
+        updatePosWorkers[index] = new WorkerRunner(
+            './js/updatePosWorker.js',
+            st,
+            ed
         )
+        index++
     }
 }
 
@@ -272,7 +279,6 @@ async function update(time, isPlaying, _selected, timestep) {
     for (let i = 0; i < planets.length; i++) {
         if (planets[i].needRemove(camera)) {
             removePlanet(planets[i])
-            handleSelect(null)
         }
         if (selected && i === selected.index) {
             geometry.attributes.select.array[i] = 1
@@ -325,6 +331,7 @@ async function updateloop(isPlaying, simdelta) {
                 })
             )
         )
+
         for (let i = 0; i < updatePosWorkers.length; i++) {
             const st = updatePosWorkers[i].st * 3
             for (let j = 0; j < poss[i].data.length; j++) {

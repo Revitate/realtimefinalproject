@@ -42,6 +42,8 @@ class Planet {
 
     setActive(activeBoolean) {
         this.geometry.attributes.active.array[this.index] = activeBoolean
+            ? 1
+            : 0
     }
 
     setSize(mass) {
@@ -68,6 +70,16 @@ class Planet {
         posArr[index] = x
         posArr[index + 1] = y
         posArr[index + 2] = z
+    }
+
+    getPos() {
+        const index = this.index * 3
+        const posArr = this.geometry.attributes.position.array
+        return new THREE.Vector3(
+            posArr[index],
+            posArr[index + 1],
+            posArr[index + 2]
+        )
     }
 
     setVel(x, y, z) {
