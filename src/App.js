@@ -178,11 +178,7 @@ class App extends Component {
     }
 
     handleSelect = planet => {
-        if (planet === null) {
-            this.setState({ selected: planet, addingPlanet: false })
-        } else {
-            this.setState({ selected: planet })
-        }
+        this.setState({ selected: planet, addingPlanet: false })
     }
 
     handleTogglePlaying = () => {
