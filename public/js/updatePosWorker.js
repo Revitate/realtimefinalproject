@@ -16,5 +16,5 @@ onmessage = e => {
         output[index - st * 3 + 1] = position[index + 1] + vel.y
         output[index - st * 3 + 2] = position[index + 2] + vel.z
     }
-    postMessage(output)
+    postMessage({ output, active })
 }

@@ -35,5 +35,5 @@ onmessage = e => {
         output[index - st * 3 + 1] = velocity[index + 1] + acc.y
         output[index - st * 3 + 2] = velocity[index + 2] + acc.z
     }
-    postMessage(output)
+    postMessage({ output, active })
 }

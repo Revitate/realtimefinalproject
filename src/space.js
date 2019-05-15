@@ -380,8 +380,11 @@ async function updateloop(isPlaying, simdelta) {
         )
         for (let i = 0; i < updateVelWorkers.length; i++) {
             const st = updateVelWorkers[i].st * 3
-            for (let j = 0; j < vels[i].data.length; j++) {
-                velocity[st + j] = vels[i].data[j]
+            for (let j = 0; j < vels[i].data.output.length; j++) {
+                const index = Math.floor((st + j) / 3)
+                if (vels[i].data.active[index] === 1) {
+                    velocity[st + j] = vels[i].data.output[j]
+                }
             }
         }
         const poss = await Promise.all(
@@ -397,8 +400,11 @@ async function updateloop(isPlaying, simdelta) {
 
         for (let i = 0; i < updatePosWorkers.length; i++) {
             const st = updatePosWorkers[i].st * 3
-            for (let j = 0; j < poss[i].data.length; j++) {
-                position[st + j] = poss[i].data[j]
+            for (let j = 0; j < poss[i].data.output.length; j++) {
+                const index = Math.floor((st + j) / 3)
+                if (poss[i].data.active[index] === 1) {
+                    position[st + j] = poss[i].data.output[j]
+                }
             }
         }
     }
