@@ -8,15 +8,11 @@ class Planet {
     constructor(index, geometry) {
         this.index = index
         this.geometry = geometry
-        this.vel = new THREE.Vector3()
-        this.acc = new THREE.Vector3()
-        this.mass = 0
     }
 
     init(x, y, z, m) {
-        this.vel.set(0, 0, 0)
-        this.acc.set(0, 0, 0)
         this.setPos(x, y, z)
+        this.setVel(0, 0, 0)
         this.setSize(m)
         this.setActive(true)
     }
@@ -35,14 +31,16 @@ class Planet {
 
     setActive(activeBoolean) {
         this.geometry.attributes.active.array[this.index] = activeBoolean
-        this.geometry.attributes.active.needsUpdate = true
     }
 
     setSize(mass) {
         this.geometry.attributes.size.array[this.index] =
             5 * Math.log(mass) + 10
-        this.geometry.attributes.size.needsUpdate = true
-        this.mass = mass
+        this.geometry.attributes.mass.array[this.index] = mass
+    }
+
+    getMass() {
+        return this.geometry.attributes.mass.array[this.index]
     }
 
     setColor(r, g, b) {
@@ -51,7 +49,6 @@ class Planet {
         colorArr[index] = r
         colorArr[index + 1] = g
         colorArr[index + 2] = b
-        this.geometry.attributes.color.needsUpdate = true
     }
 
     setPos(x, y, z) {
@@ -60,58 +57,40 @@ class Planet {
         posArr[index] = x
         posArr[index + 1] = y
         posArr[index + 2] = z
-        this.geometry.attributes.position.needsUpdate = true
     }
 
-    applyForceFrom(other) {
-        const posArr = this.geometry.attributes.position.array
+    setVel(x, y, z) {
         const index = this.index * 3
-        const x = posArr[index]
-        const y = posArr[index + 1]
-        const z = posArr[index + 2]
-        const otherindex = other.index * 3
-        const ox = posArr[otherindex]
-        const oy = posArr[otherindex + 1]
-        const oz = posArr[otherindex + 2]
+        const velArr = this.geometry.attributes.velocity.array
+        velArr[index] = x
+        velArr[index + 1] = y
+        velArr[index + 2] = z
+    }
 
-        const dx = ox - x
-        const dy = oy - y
-        const dz = oz - z
+    setVelX(x) {
+        const index = this.index * 3
+        const velArr = this.geometry.attributes.velocity.array
+        velArr[index] = x
+    }
+    setVelY(y) {
+        const index = this.index * 3
+        const velArr = this.geometry.attributes.velocity.array
+        velArr[index + 1] = y
+    }
+    setVelZ(z) {
+        const index = this.index * 3
+        const velArr = this.geometry.attributes.velocity.array
+        velArr[index + 2] = z
+    }
 
-        const distanceVector = new THREE.Vector3(dx, dy, dz)
-        const distanceSqrt = distanceVector.lengthSq()
-        const direction = distanceVector.normalize()
-        const acc = direction.multiplyScalar(
-            // Math.min(
-            (6.67 * other.mass) / Math.pow(10, 5) / distanceSqrt
-            //     MAX_ACC_SIZE
-            // ).
+    getVel() {
+        const index = this.index * 3
+        const velArr = this.geometry.attributes.velocity.array
+        return new THREE.Vector3(
+            velArr[index],
+            velArr[index + 1],
+            velArr[index + 2]
         )
-        this.acc.add(acc)
-    }
-
-    updateVel(delta) {
-        this.vel.add(this.acc.clone().multiplyScalar(delta))
-        this.acc.set(0, 0, 0)
-    }
-
-    updatePos(delta) {
-        // for (let i = 0; i < this.prevPos.length - 1; i++) {
-        //     this.prevPos[i].copy(this.prevPos[i + 1])
-        // }
-        // this.prevPos[this.prevPos.length - 1].copy(this.pos)
-        const vel = this.vel.clone().multiplyScalar(Math.pow(10, -9) * delta)
-        const index = this.index * 3
-        const posArr = this.geometry.attributes.position.array
-        posArr[index] += vel.x
-        posArr[index + 1] += vel.y
-        posArr[index + 2] += vel.z
-        this.geometry.attributes.position.needsUpdate = true
-    }
-
-    update(delta) {
-        this.updateVel(delta)
-        this.updatePos(delta)
     }
 }
 

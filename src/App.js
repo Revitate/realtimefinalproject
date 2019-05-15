@@ -73,10 +73,10 @@ const Panel = props => {
                             frontText="mass : "
                             backText=" x 10<sup>24</sup> kg"
                             type="number"
-                            value={props.selected.mass}
+                            value={props.selected.getMass()}
                             onChange={e => {
                                 props.selected.setSize(Number(e.target.value))
-                                setState({ m: props.selected.mass })
+                                setState({ m: props.selected.getMass() })
                             }}
                         />
                         <h4>Velocity</h4>
@@ -84,11 +84,10 @@ const Panel = props => {
                             frontText="x : "
                             backText=" m/s"
                             type="number"
-                            value={props.selected.vel.x}
+                            value={props.selected.getVel().x}
                             onChange={e => {
-                                console.log(props.selected)
-                                props.selected.vel.setX(Number(e.target.value))
-                                setState({ x: props.selected.vel.x })
+                                props.selected.setVelX(Number(e.target.value))
+                                setState({ x: props.selected.getVel().x })
                             }}
                             step="0.1"
                         />
@@ -97,10 +96,10 @@ const Panel = props => {
                             frontText="y : "
                             backText=" m/s"
                             type="number"
-                            value={props.selected.vel.y}
+                            value={props.selected.getVel().y}
                             onChange={e => {
-                                props.selected.vel.setY(Number(e.target.value))
-                                setState({ x: props.selected.vel.y })
+                                props.selected.setVelY(Number(e.target.value))
+                                setState({ x: props.selected.getVel().y })
                             }}
                             step="0.1"
                         />
@@ -109,10 +108,10 @@ const Panel = props => {
                             frontText="z : "
                             backText=" m/s"
                             type="number"
-                            value={props.selected.vel.z}
+                            value={props.selected.getVel().z}
                             onChange={e => {
-                                props.selected.vel.setZ(Number(e.target.value))
-                                setState({ x: props.selected.vel.z })
+                                props.selected.setVelZ(Number(e.target.value))
+                                setState({ x: props.selected.getVel().z })
                             }}
                             step="0.1"
                         />
@@ -164,15 +163,14 @@ class App extends Component {
 
         Space.init(this.canvas.current, this.handleSelect)
 
-        const loop = time => {
+        const loop = async time => {
             requestAnimationFrame(loop)
-            Space.update(
+            await Space.update(
                 time,
                 this.state.playing,
                 this.state.selected,
                 timeStep
             )
-
             stats.update()
         }
 
