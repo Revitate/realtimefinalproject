@@ -4,7 +4,7 @@ import WorkerRunner from './workerRunner'
 
 const { THREE } = window
 
-const MAX_PLANETS = 4000
+const MAX_PLANETS = 1000
 const FOV = 55
 
 export function addPlanet(x, y, z, m) {
@@ -67,7 +67,7 @@ export function removePlanet(planet) {
 
 export function breakPlanet(planet) {
     const numberOfShard = THREE.Math.randInt(3, 7)
-    let mass = planet.mass
+    let mass = planet.getMass()
     const positions = geometry.attributes.position.array
     const sizes = geometry.attributes.size.array
     const index = planet.index * 3
@@ -78,11 +78,10 @@ export function breakPlanet(planet) {
             THREE.Math.randFloat(-1, 1),
             THREE.Math.randFloat(-1, 1),
             THREE.Math.randFloat(-1, 1)
-        ).multiplyScalar(THREE.Math.randFloat(5000, 60000))
+        ).multiplyScalar(THREE.Math.randFloat(80000, 80000))
         const addPosition = velocity
             .clone()
-            .normalize()
-            .setLength(sizes[planet.index])
+            .setLength(sizes[planet.index] * 0.5)
         const newPlanet = addPlanet(
             positions[index] + addPosition.x,
             positions[index + 1] + addPosition.y,
@@ -94,7 +93,7 @@ export function breakPlanet(planet) {
         momentum.sub(velocity.multiplyScalar(newMass))
         mass = mass - newMass
     }
-    planet.mass = mass
+    planet.setSize(mass)
     const vel = momentum.divideScalar(mass)
     planet.setVel(vel.x, vel.y, vel.z)
 }
@@ -113,14 +112,14 @@ function init(_canvas, _handleSelect) {
     initMouseRaycast()
 
     addPlanet(0, 0, 0, 2000000)
-    for (let i = 1; i < MAX_PLANETS; i++) {
+    /* for (let i = 1; i < 200; i++) {
         addPlanet(
             THREE.Math.randFloat(-300, 300),
             THREE.Math.randFloat(-300, 300),
             THREE.Math.randFloat(-300, 300),
             6
         )
-    }
+    } */
 }
 
 let scene, camera, renderer, controls
@@ -279,6 +278,9 @@ async function update(time, isPlaying, _selected, timestep) {
     for (let i = 0; i < planets.length; i++) {
         if (planets[i].needRemove(camera)) {
             removePlanet(planets[i])
+            if (i === selected.index) {
+                handleSelect(null)
+            }
         }
         if (selected && i === selected.index) {
             geometry.attributes.select.array[i] = 1
