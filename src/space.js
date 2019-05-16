@@ -273,21 +273,19 @@ const iterPerWorker = Math.ceil(MAX_PLANETS / numberWorker)
 const updateVelWorkers = new Array(numberWorker)
 const updatePosWorkers = new Array(numberWorker)
 function initWorker() {
-    let index = 0
-    for (let i = 0; i < MAX_PLANETS; i += iterPerWorker) {
-        const st = i
-        const ed = Math.min(i + iterPerWorker, MAX_PLANETS)
-        updateVelWorkers[index] = new WorkerRunner(
+    for (let i = 0; i < numberWorker; i++) {
+        const st = Math.min(i * iterPerWorker, MAX_PLANETS)
+        const ed = Math.min(st + iterPerWorker, MAX_PLANETS)
+        updateVelWorkers[i] = new WorkerRunner(
             './js/updateVelWorker.js',
             st,
             ed
         )
-        updatePosWorkers[index] = new WorkerRunner(
+        updatePosWorkers[i] = new WorkerRunner(
             './js/updatePosWorker.js',
             st,
             ed
         )
-        index++
     }
 }
 
